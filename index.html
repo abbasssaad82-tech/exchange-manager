@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Exchange">
+<meta name="theme-color" content="#0b0b0c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Exchange Manager</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:#111;background:#f5f5f7}
+*{box-sizing:border-box} body{margin:0;min-height:100vh;padding:max(18px,env(safe-area-inset-top)) 14px max(24px,env(safe-area-inset-bottom));}
+.wrap{max-width:720px;margin:auto} h1{font-size:28px;margin:10px 0 2px}.sub{color:#6b6b70;margin-bottom:18px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card,.panel{background:#fff;border-radius:18px;padding:15px;box-shadow:0 1px 10px #0000000c}
+.label{font-size:12px;color:#777}.value{font-size:21px;font-weight:750;margin-top:5px;overflow-wrap:anywhere}
+nav{display:flex;gap:7px;overflow:auto;margin:16px 0;padding-bottom:2px}.tab,button{border:0;border-radius:13px;padding:12px 14px;font-weight:700;font-size:14px;background:#111;color:#fff}.tab{background:#e8e8eb;color:#111;white-space:nowrap}.tab.active{background:#111;color:#fff}
+section{display:none}section.active{display:block}.panel{margin-bottom:12px}h3{margin:2px 0 14px}
+input,select{width:100%;padding:13px;border:1px solid #d9d9dd;border-radius:12px;font-size:16px;margin:5px 0 11px;background:#fff;color:#111}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.full{width:100%;margin-top:7px}.secondary{background:#e8e8eb;color:#111}.danger{background:#b42318}
+.item{padding:12px 0;border-bottom:1px solid #eee}.item:last-child{border-bottom:0}.item strong{display:block}.muted,.notice{color:#737378;font-size:13px}.profit{font-weight:750;margin-top:4px}.positive{color:#067647}.negative{color:#b42318}.empty{text-align:center;color:#888;padding:20px}
+.lock{position:fixed;inset:0;background:#f5f5f7;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}.lockbox{width:min(420px,100%);background:#fff;border-radius:22px;padding:22px;box-shadow:0 10px 40px #0001}.lockbox h2{margin:0 0 5px}.hidden{display:none!important}.badge{display:inline-block;padding:5px 9px;border-radius:99px;background:#ecfdf3;color:#067647;font-size:12px;font-weight:700}.toprow{display:flex;align-items:center;justify-content:space-between;gap:10px}.tiny{font-size:12px;color:#777}.error{color:#b42318;font-size:13px;min-height:18px}
+@media(max-width:390px){.value{font-size:18px}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="lock" class="lock">
+ <div class="lockbox">
+  <h2 id="lockTitle">Exchange Manager</h2>
+  <p class="notice" id="lockText">Create a passcode to encrypt your records on this iPhone.</p>
+  <input id="pass" type="password" inputmode="numeric" autocomplete="off" placeholder="6+ digit passcode">
+  <input id="pass2" type="password" inputmode="numeric" autocomplete="off" placeholder="Confirm passcode">
+  <div id="lockError" class="error"></div>
+  <button class="full" id="unlockBtn">Create Secure Vault</button>
+  <p class="tiny">Your passcode is not stored. If you forget it, encrypted records cannot be recovered.</p>
+ </div>
+</div>
+
+<div class="wrap">
+ <div class="toprow">
+  <div><h1>Exchange Manager</h1><div class="sub">USD → CFA · Private profit tracker</div></div>
+  <span class="badge">Encrypted</span>
+ </div>
+
+ <div class="cards">
+  <div class="card"><div class="label">USD Remaining</div><div class="value" id="dRemain">$0</div></div>
+  <div class="card"><div class="label">Total Profit</div><div class="value" id="dProfit">0 CFA</div></div>
+  <div class="card"><div class="label">USD Sold</div><div class="value" id="dSold">$0</div></div>
+  <div class="card"><div class="label">CFA Collected</div><div class="value" id="dCfa">0 CFA</div></div>
+ </div>
+
+ <nav>
+  <button class="tab active" data-tab="sale">New Sale</button>
+  <button class="tab" data-tab="batch">New Batch</button>
+  <button class="tab" data-tab="customers">Customers</button>
+  <button class="tab" data-tab="history">History</button>
+  <button class="tab" data-tab="security">Security</button>
+ </nav>
+
+ <section id="sale" class="active">
+  <div class="panel">
+   <h3>New Sale</h3>
+   <label>Customer Name</label><input id="sName" placeholder="e.g. Ali">
+   <div class="row">
+    <div><label>USD Amount</label><input id="sUsd" inputmode="decimal" type="number" min="0" step="0.01" placeholder="1000"></div>
+    <div><label>Selling Rate</label><input id="sRate" inputmode="decimal" type="number" min="0" step="0.01" placeholder="565"></div>
+   </div>
+   <label>USD Batch</label><select id="sBatch"></select>
+   <div id="salePreview" class="notice"></div>
+   <button class="full" id="saveSale">Save Sale</button>
+  </div>
+ </section>
+
+ <section id="batch">
+  <div class="panel">
+   <h3>New USD Batch</h3>
+   <div class="row">
+    <div><label>USD Purchased</label><input id="bUsd" inputmode="decimal" type="number" min="0" step="0.01" placeholder="10000"></div>
+    <div><label>Purchase Rate</label><input id="bRate" inputmode="decimal" type="number" min="0" step="0.01" placeholder="550"></div>
+   </div>
+   <label>Note (optional)</label><input id="bNote" placeholder="e.g. Morning purchase">
+   <button class="full" id="saveBatch">Create Batch</button>
+  </div>
+  <div class="panel"><h3>USD Batches</h3><div id="batchList"></div></div>
+ </section>
+
+ <section id="customers"><div class="panel"><h3>Profit by Customer</h3><div id="customerList"></div></div></section>
+ <section id="history"><div class="panel"><h3>Sales History</h3><div id="historyList"></div></div></section>
+
+ <section id="security">
+  <div class="panel">
+   <h3>Encrypted Backup</h3>
+   <p class="notice">The backup stays encrypted with your passcode. Keep a copy in Files or iCloud Drive.</p>
+   <button class="full" id="exportBtn">Export Encrypted Backup</button>
+   <button class="full secondary" id="restoreBtn">Restore Encrypted Backup</button>
+   <input id="restoreFile" type="file" accept=".json,application/json" class="hidden">
+  </div>
+  <div class="panel">
+   <h3>App Lock</h3>
+   <button class="full secondary" id="lockBtn">Lock Now</button>
+  </div>
+  <div class="panel">
+   <h3>Delete Records</h3>
+   <button class="full danger" id="resetBtn">Delete All Data</button>
+  </div>
+ </section>
+</div>
+
+<script>
+"use strict";
+const STORE="exchange_manager_secure_v2";
+let db={batches:[],sales:[]}, sessionKey=null, salt=null;
+const $=id=>document.getElementById(id);
+const enc=new TextEncoder(), dec=new TextDecoder();
+const b64=u8=>btoa(String.fromCharCode(...u8));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const fmt=n=>Number(n||0).toLocaleString("en-US",{maximumFractionDigits:2});
+const money=n=>fmt(n)+" CFA", usd=n=>"$"+fmt(n);
+
+async function deriveKey(pass,saltBytes){
+ const material=await crypto.subtle.importKey("raw",enc.encode(pass),"PBKDF2",false,["deriveKey"]);
+ return crypto.subtle.deriveKey({name:"PBKDF2",salt:saltBytes,iterations:250000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function encryptDB(){
+ const iv=crypto.getRandomValues(new Uint8Array(12));
+ const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv},sessionKey,enc.encode(JSON.stringify(db)));
+ return {v:2,salt:b64(salt),iv:b64(iv),data:b64(new Uint8Array(cipher))};
+}
+async function persist(){ localStorage.setItem(STORE,JSON.stringify(await encryptDB())); render(); }
+async function decryptVault(v,key){
+ const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(v.iv)},key,unb64(v.data));
+ return JSON.parse(dec.decode(plain));
+}
+function vault(){try{return JSON.parse(localStorage.getItem(STORE)||"null")}catch{return null}}
+
+async function setupOrUnlock(){
+ const v=vault(), p=$("pass").value, p2=$("pass2").value;
+ $("lockError").textContent="";
+ if(!v){
+  if(!/^\d{6,}$/.test(p)) return $("lockError").textContent="Use at least 6 digits.";
+  if(p!==p2) return $("lockError").textContent="Passcodes do not match.";
+  salt=crypto.getRandomValues(new Uint8Array(16)); sessionKey=await deriveKey(p,salt);
+  db={batches:[],sales:[]}; await persist(); hideLock();
+ }else{
+  try{
+   salt=unb64(v.salt); const k=await deriveKey(p,salt); const data=await decryptVault(v,k);
+   sessionKey=k; db=data; hideLock(); render();
+  }catch{ $("lockError").textContent="Incorrect passcode."; }
+ }
+}
+function showLock(){
+ sessionKey=null; db={batches:[],sales:[]}; $("pass").value=""; $("pass2").value="";
+ const has=!!vault(); $("lockTitle").textContent=has?"Unlock Exchange Manager":"Exchange Manager";
+ $("lockText").textContent=has?"Enter your passcode to decrypt your records.":"Create a passcode to encrypt your records on this iPhone.";
+ $("pass2").classList.toggle("hidden",has); $("unlockBtn").textContent=has?"Unlock":"Create Secure Vault";
+ $("lock").classList.remove("hidden"); setTimeout(()=>$("pass").focus(),100);
+}
+function hideLock(){ $("lock").classList.add("hidden"); $("pass").value=$("pass2").value=""; }
+
+function batchRemaining(b){return b.usd-db.sales.filter(s=>s.batchId===b.id).reduce((a,s)=>a+s.usd,0)}
+async function addBatch(){
+ const u=+$("bUsd").value,r=+$("bRate").value;
+ if(!(u>0&&r>0)) return alert("Enter USD amount and purchase rate.");
+ db.batches.push({id:Date.now(),usd:u,rate:r,note:$("bNote").value.trim(),date:new Date().toISOString()});
+ $("bUsd").value=$("bRate").value=$("bNote").value=""; await persist();
+}
+async function addSale(){
+ const name=$("sName").value.trim(),u=+$("sUsd").value,r=+$("sRate").value,id=+$("sBatch").value;
+ const b=db.batches.find(x=>x.id===id);
+ if(!name||!(u>0&&r>0)||!b) return alert("Complete the sale details.");
+ if(u>batchRemaining(b)) return alert("Not enough USD remaining in this batch.");
+ db.sales.push({id:Date.now(),name,usd:u,rate:r,batchId:id,date:new Date().toISOString()});
+ $("sName").value=$("sUsd").value=$("sRate").value=""; await persist();
+}
+function preview(){
+ const b=db.batches.find(x=>x.id===+$("sBatch").value),u=+$("sUsd").value,r=+$("sRate").value;
+ $("salePreview").textContent=(b&&u>0&&r>0)?`CFA received: ${money(u*r)} · Profit: ${money(u*(r-b.rate))}`:"";
+}
+function render(){
+ if(!sessionKey)return;
+ const sold=db.sales.reduce((a,s)=>a+s.usd,0), collected=db.sales.reduce((a,s)=>a+s.usd*s.rate,0);
+ const profit=db.sales.reduce((a,s)=>{const b=db.batches.find(x=>x.id===s.batchId);return a+s.usd*(s.rate-(b?.rate||0))},0);
+ const remain=db.batches.reduce((a,b)=>a+batchRemaining(b),0);
+ $("dRemain").textContent=usd(remain);$("dProfit").textContent=money(profit);$("dSold").textContent=usd(sold);$("dCfa").textContent=money(collected);
+
+ const open=db.batches.filter(b=>batchRemaining(b)>0);
+ $("sBatch").innerHTML=open.length?open.map(b=>`<option value="${b.id}">${usd(batchRemaining(b))} left · Cost ${fmt(b.rate)}</option>`).join(""):`<option value="">No open batch</option>`;
+ $("batchList").innerHTML=db.batches.length?db.batches.slice().reverse().map(b=>`<div class="item"><strong>${usd(b.usd)} @ ${fmt(b.rate)}</strong><span class="muted">${usd(batchRemaining(b))} remaining · Initial cost ${money(b.usd*b.rate)}${b.note?" · "+escapeHTML(b.note):""}</span></div>`).join(""):'<div class="empty">No batches yet.</div>';
+
+ const map={};db.sales.forEach(s=>{const b=db.batches.find(x=>x.id===s.batchId);if(!map[s.name])map[s.name]={usd:0,cfa:0,profit:0,count:0};let v=map[s.name];v.usd+=s.usd;v.cfa+=s.usd*s.rate;v.profit+=s.usd*(s.rate-(b?.rate||0));v.count++});
+ $("customerList").innerHTML=Object.keys(map).length?Object.entries(map).sort((a,b)=>b[1].profit-a[1].profit).map(([n,v])=>`<div class="item"><strong>${escapeHTML(n)}</strong><span class="muted">${v.count} sale(s) · ${usd(v.usd)} · ${money(v.cfa)}</span><div class="profit ${v.profit>=0?'positive':'negative'}">${money(v.profit)} profit</div></div>`).join(""):'<div class="empty">No customers yet.</div>';
+
+ $("historyList").innerHTML=db.sales.length?db.sales.slice().reverse().map(s=>{const b=db.batches.find(x=>x.id===s.batchId),p=s.usd*(s.rate-(b?.rate||0));return `<div class="item"><strong>${escapeHTML(s.name)} · ${usd(s.usd)}</strong><span class="muted">Sell ${fmt(s.rate)} · Cost ${fmt(b?.rate||0)} · ${new Date(s.date).toLocaleString()}</span><div class="profit ${p>=0?'positive':'negative'}">${money(p)} profit</div></div>`}).join(""):'<div class="empty">No sales yet.</div>';
+ preview();
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+async function exportBackup(){
+ const v=vault(); if(!v)return;
+ const blob=new Blob([JSON.stringify(v,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`exchange-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function restoreFile(file){
+ try{
+  const v=JSON.parse(await file.text());
+  if(v.v!==2||!v.salt||!v.iv||!v.data)throw 0;
+  localStorage.setItem(STORE,JSON.stringify(v)); alert("Encrypted backup loaded. Unlock it with its original passcode."); showLock();
+ }catch{alert("Invalid backup file.")}
+}
+async function resetAll(){
+ if(confirm("Delete all batches and sales from this iPhone?")){
+  localStorage.removeItem(STORE); sessionKey=null; db={batches:[],sales:[]}; showLock();
+ }
+}
+
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll("section").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");$(b.dataset.tab).classList.add("active");
+}));
+$("unlockBtn").onclick=setupOrUnlock;$("pass").addEventListener("keydown",e=>{if(e.key==="Enter")setupOrUnlock()});
+$("saveBatch").onclick=addBatch;$("saveSale").onclick=addSale;
+["sUsd","sRate","sBatch"].forEach(id=>$(id).addEventListener("input",preview));
+$("exportBtn").onclick=exportBackup;$("restoreBtn").onclick=()=>$("restoreFile").click();
+$("restoreFile").onchange=e=>{if(e.target.files[0])restoreFile(e.target.files[0])};
+$("lockBtn").onclick=showLock;$("resetBtn").onclick=resetAll;
+if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+showLock();
+</script>
+</body>
+</html>
